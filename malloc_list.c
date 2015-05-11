@@ -80,18 +80,18 @@ block_t* extend_memory(block_t* last, size_t size)
 
 void* malloc(size_t size)
 {
-	if(!global_memory)
-	{
-		return extend_memory(NULL,size+META_SIZE)+1;
-	}
-	else
-	{
+	if(global_memory) {
+
 		block_t* last;
 		block_t* block = block_exists(&last,size+META_SIZE);
+		
 		if(block)
 			return block+1;
 		else
 			return extend_memory(last,size+META_SIZE)+1;
+
+	} else {
+		return extend_memory(NULL,size+META_SIZE)+1;
 	}
 }
 
