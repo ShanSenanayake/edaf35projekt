@@ -1,13 +1,10 @@
 
 
 #define _BSD_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
-
+#include <sys/types.h>
+#include <unistd.h>
 
 
 
@@ -15,9 +12,9 @@ typedef struct block_t 	block_t;
 
 struct block_t{
 
-	size_t size; /*size including block_t*/
+	size_t size; /*size excluding block_t*/
 	block_t* next;	/*next block if exists, otherwise NULL*/
-	bool free;
+	int free;
 };
 
 
@@ -26,17 +23,16 @@ struct block_t{
  
 
 
-
-static block_t* global_memory = NULL;
-
+block_t* global_memory = NULL;
 
 
-block_t* alignment(block_t* block)
+
+/*block_t* alignment(block_t* block)
 {
 	unsigned ptr = block;
 	ptr = ((ptr-1)&0xfffffff8)+ALIGNMENT_SIZE;
 	return (block_t*)ptr;
-}
+}*/
 
 block_t* block_exists(block_t** last,size_t size)
 {
@@ -46,10 +42,8 @@ block_t* block_exists(block_t** last,size_t size)
 	while(block)
 	{
 		if(block->free && block->size >= size)
-		{
-			block->free = false;
 			return block;
-		}
+		
 
 		*last = block;
 		block = block->next;
@@ -59,13 +53,15 @@ block_t* block_exists(block_t** last,size_t size)
 
 block_t* extend_memory(block_t* last, size_t size)
 {
-	block_t* block = sbrk(size+ALIGNMENT_SIZE);
-	block = alignment(block);
+	void* test = sbrk(0);
+	block_t* block = sbrk(size+META_SIZE);
+	//block = alignment(block);
+	assert((void*)block == test);
 	if(block == (void*)-1)
 		return NULL;
 	
 	block->size = size;
-	block->free = false;
+	block->free = 0;
 	block->next = NULL;
 
 
@@ -80,21 +76,25 @@ block_t* extend_memory(block_t* last, size_t size)
 
 void* malloc(size_t size)
 {
+	block_t* block;
+	if(size<= 0)
+		return NULL;
+
 	if(global_memory) {
 
-		block_t* last;
-		block_t* block = block_exists(&last,size+META_SIZE);
+		block_t* last = global_memory;
+		block = block_exists(&last,size);
 		
 		if(block)
-			return block+1;
+			block->free = 0;
 		else
-			return extend_memory(last,size+META_SIZE)+1;
+			block = extend_memory(last,size);
 
 	} else {
-		return extend_memory(NULL,size+META_SIZE)+1;
+		block = extend_memory(NULL,size);
 	}
+	return (block+1);
 }
-
 
 
 void free(void* ptr)
@@ -102,7 +102,8 @@ void free(void* ptr)
 	if(!ptr)
 		return;
 	block_t* block = (block_t*)ptr-1;
-	block->free = true;
+	assert(block->free == 0);
+	block->free = 1;
 }
 
 void* calloc(size_t count, size_t size)
@@ -122,13 +123,16 @@ void* realloc(void* ptr, size_t size)
 	if(!ptr)
 		return malloc(size);
 	
-	void* ptr2 = malloc(size);
 	block_t* block = (block_t*)ptr-1;
+	if(block->size>=size)
+		return ptr;
+
+	void* ptr2 = malloc(size);
 	if(!ptr2)
 		return NULL;
 
-	memcpy(ptr2 ,ptr,block->size-META_SIZE);
-	free(block);
+	memcpy(ptr2 ,ptr,block->size);
+	free(ptr);
 	return ptr2;
 }
 
