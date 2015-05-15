@@ -139,7 +139,7 @@ void* malloc(size_t size)
 block_t* find_buddy(block_t* block)
 {
 	if(block->kval = K_VALUE-1)
-		return NULL
+		return NULL;
 
 	block_t* buddy = global_memory + ((block-global_memory) ^ (1<<(block->kval)));
 	if(!buddy->free || buddy->kval != block->kval)
@@ -207,16 +207,20 @@ void* realloc(void* ptr, size_t size)
 		free(ptr);
 	
 	block_t* block = (block_t*)ptr-1;
-	size = adjust_size(size);
 
-	if(block->size>=size)
+	int dummy;
+	size = adjust_size(size,&dummy);
+
+
+	block_size = (1<<block->kval)-META_SIZE;
+	if(block_size>=size)
 		return ptr;
 
 	void* ptr2 = malloc(size);
 	if(!ptr2)
 		return NULL;
 
-	memcpy(ptr2 ,ptr,block->size-META_SIZE);
+	memcpy(ptr2 ,ptr,block_size);
 	free(ptr);
 	return ptr2;
 }
