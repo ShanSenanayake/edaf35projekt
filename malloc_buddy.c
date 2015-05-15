@@ -12,7 +12,7 @@ struct block_t{
 	char		kval;			/* current value of K.*/
 	block_t*	next;			/* sucessor block in list. */
 	block_t*	prev;			/* predecessor block in list. */
-}
+};
 
 #define META_SIZE	(sizeof(block_t))
 #define K_VALUE		(22)
@@ -118,7 +118,7 @@ void* malloc(size_t size)
 		block->next = NULL;
 		block_t* new_block = split_block(block);
 		--new_index;
-		block_t old_first = free_list[new_index];
+		block_t* old_first = free_list[new_index];
 		if(old_first){
 			old_first->prev = block;
 			block->next = old_first;
