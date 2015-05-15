@@ -14,7 +14,7 @@ struct block_t{
 	block_t*	prev;			/* predecessor block in list. */
 }
 
-#define META_SIZE	(sizeof(block_t));
+#define META_SIZE	(sizeof(block_t))
 #define K_VALUE		(22)
 
 void* global_memory = NULL;
@@ -39,14 +39,14 @@ size_t adjust_size(size_t size, int* index)
 block_t* remove_first(int index)
 {
 
-	block_t* block 		=	freelist[index];
+	block_t* block 		=	free_list[index];
 	block_t* next		=	block->next;
 	if(next){
 		next->prev 		= 	NULL;
-		freelist[index] = 	next;
+		free_list[index] = 	next;
 	}else{
 
-		freelist[index] = 	NULL;			
+		free_list[index] = 	NULL;			
 	}
 	
 	block->reserved 	= 	1;
@@ -85,8 +85,8 @@ void* malloc(size_t size)
 
 
 	if(global_memory){
-		if(freelist[index]){
-			return (remove_first(block)+1);
+		if(free_list[index]){
+			return (remove_first(index)+1);
 		}
 
 	}else{ /*first time*/
@@ -105,32 +105,32 @@ void* malloc(size_t size)
 	}	
 
 	int new_index = index;
-	while(!freelist[new_index++])
+	while(!free_list[new_index++])
 		;
 	while(new_index > index){
-		block = freelist[new_index];
+		block = free_list[new_index];
 		block_t* next = block->next;
 		if(next){
 			next->prev = NULL;
-			freelist[new_index] = next;
+			free_list[new_index] = next;
 		}
 
 		block->next = NULL;
-		block_t new_block* = split_block(block);
+		block_t* new_block = split_block(block);
 		--new_index;
-		block_t old_first = freelist[new_index];
+		block_t old_first = free_list[new_index];
 		if(old_first){
 			old_first->prev = block;
 			block->next = old_first;
 		}
 		new_block->next = block;
 		block->prev = new_block;
-		freelist[new_index] = new_block;
+		free_list[new_index] = new_block;
 		block = new_block;
 	}
 
 
-	return (remove_first(block)+1);
+	return (remove_first(index)+1);
 }
 
 
@@ -148,7 +148,7 @@ block_t* find_buddy(block_t* block)
 	return buddy;
 }
 
-void remove_from_freelist(block_t* block)
+void remove_from_free_list(block_t* block)
 {
 	block->next->prev = block->prev;
 	block->prev->next = block->next;
@@ -160,7 +160,7 @@ block_t* deallocate(block_t* block)
 {
 	block_t* buddy = find_buddy(block);
 	if(buddy){
-		remove_from_freelist(block);
+		remove_from_free_list(block);
 		if(block>buddy){
 			++(buddy->kval);
 			block = buddy;
@@ -180,9 +180,9 @@ void free(void* ptr)
 	block->reserved = 0;
 	deallocate(block);
 	char kval = block->kval;
-	block->next = freelist[kval];
+	block->next = free_list[kval];
 	block->next->prev = block;
-	freelist[kval] = block;
+	free_list[kval] = block;
 
 }
 
