@@ -15,7 +15,7 @@ struct block_t{
 };
 
 #define META_SIZE	(sizeof(block_t))
-#define K_VALUE		(22)
+#define K_VALUE		(23)
 
 void* global_memory = NULL;
 block_t* free_list[K_VALUE+1];
@@ -141,7 +141,7 @@ block_t* find_buddy(block_t* block)
 	if(block->kval = K_VALUE-1)
 		return NULL;
 
-	block_t* buddy = global_memory + ((block-global_memory) ^ (1<<(block->kval)));
+	block_t* buddy = global_memory + (((void*)(block) - global_memory) ^ (1<<(block->kval)));
 	if(!buddy->reserved || buddy->kval != block->kval)
 		return NULL;
 
@@ -154,7 +154,7 @@ void remove_from_free_list(block_t* block)
 	block->prev->next = block->next;
 	block->prev = NULL;
 	block->next = NULL;
-	
+
 }
 
 block_t* deallocate(block_t* block)
@@ -203,9 +203,6 @@ void* realloc(void* ptr, size_t size)
 {
 	if(!ptr)
 		return malloc(size);
-
-	if(size <=0)
-		free(ptr);
 	
 	block_t* block = (block_t*)ptr-1;
 
