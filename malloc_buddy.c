@@ -154,6 +154,7 @@ void remove_from_free_list(block_t* block)
 	block->prev->next = block->next;
 	block->prev = NULL;
 	block->next = NULL;
+	
 }
 
 block_t* deallocate(block_t* block)
