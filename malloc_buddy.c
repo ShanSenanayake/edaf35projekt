@@ -142,7 +142,7 @@ block_t* find_buddy(block_t* block)
 		return NULL;
 
 	block_t* buddy = global_memory + ((block-global_memory) ^ (1<<(block->kval)));
-	if(!buddy->free || buddy->kval != block->kval)
+	if(!buddy->reserved || buddy->kval != block->kval)
 		return NULL;
 
 	return buddy;
@@ -212,7 +212,7 @@ void* realloc(void* ptr, size_t size)
 	size = adjust_size(size,&dummy);
 
 
-	block_size = (1<<block->kval)-META_SIZE;
+	size_t block_size = (1<<block->kval)-META_SIZE;
 	if(block_size>=size)
 		return ptr;
 
