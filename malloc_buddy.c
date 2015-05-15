@@ -15,7 +15,7 @@ struct block_t{
 }
 
 #define META_SIZE	(sizeof(block_t));
-#define K_VALUE		(20)
+#define K_VALUE		(22)
 
 void* global_memory = NULL;
 block_t* free_list[K_VALUE];
@@ -27,6 +27,7 @@ block_t* split_block(block_t* block)
 {
 	char kval = block->kval;
 	block_t* next = block->next;
+	
 	if(next){
 		next->prev = NULL;
 		freelist[kval] = next;
