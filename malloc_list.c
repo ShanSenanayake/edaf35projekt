@@ -136,3 +136,9 @@ void* realloc(void* ptr, size_t size)
 	return ptr2;
 }
 
+
+int main(void){
+	printf("%d\n",META_SIZE);
+	return 0;
+
+}
